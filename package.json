@@ -1,0 +1,16 @@
+{
+  "name": "sqllite-data-generator",
+  "version": "1.0.0",
+  "description": "A CLI for generating SQLLite database files with example data",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Roel van Egmond",
+  "license": "MIT",
+  "dependencies": {
+    "faker": "^5.5.3",
+    "sqlite3": "^5.1.7"
+  }
+}
