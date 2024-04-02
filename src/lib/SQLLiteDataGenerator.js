@@ -1,5 +1,11 @@
-class SQLLite {
-  constructor(database, sqlite3) {
+class SQLLiteDataGenerator {
+  /**
+   * Represents a SQLLiteLib object.
+   * @constructor
+   * @param {string} database - The path to the SQLite database file.
+   * @param {object} sqlite3 - The SQLite3 module.
+   */
+  constructor(database, sqlite3 = require("sqlite3").verbose()) {
     this.sqlite3 = sqlite3;
     this.db = new sqlite3.Database(database);
   }
@@ -91,4 +97,4 @@ class SQLLite {
   }
 }
 
-module.exports = SQLLite;
+module.exports = SQLLiteDataGenerator;

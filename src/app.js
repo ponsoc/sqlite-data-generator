@@ -1,10 +1,8 @@
-const sqlite3 = require("sqlite3").verbose();
 const faker = require("faker");
-
-const SQLLiteLib = require("./lib/SQLLiteLib");
+const SQLLiteDataGenerator = require("./lib/SQLLiteDataGenerator");
 
 // create a new instance of the SQLLiteLib class
-const db = new SQLLiteLib("example.db", sqlite3);
+const db = new SQLLiteDataGenerator("example.db");
 // import the TableConfig and pass any dependencies
 const tables = require("./config/tables")({ faker, db });
 
@@ -22,3 +20,5 @@ async function main() {
 main()
   .then(() => console.log("Database generated successfully!"))
   .catch((error) => console.error(error));
+
+module.exports = { SQLLiteDataGenerator };
