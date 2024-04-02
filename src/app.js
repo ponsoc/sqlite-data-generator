@@ -1,17 +1,17 @@
-const faker = require("faker");
+const { faker } = require("@faker-js/faker");
 const SQLLiteDataGenerator = require("./lib/SQLLiteDataGenerator");
 
 // create a new instance of the SQLLiteLib class
 const db = new SQLLiteDataGenerator("example.db");
 // import the TableConfig and pass any dependencies
-const tables = require("./config/tables")({ faker, db });
+const tables = require("./config/tables copy")({ faker, db });
 
 async function main() {
   try {
     await db.connect();
     await db.generate(tables);
   } catch (error) {
-    console.error(error);
+    throw error;
   } finally {
     await db.disconnect();
   }

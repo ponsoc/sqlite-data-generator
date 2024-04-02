@@ -10,7 +10,7 @@
   "author": "Roel van Egmond",
   "license": "MIT",
   "dependencies": {
-    "faker": "^5.5.3",
+    "@faker-js/faker": "^8.4.1",
     "sqlite3": "^5.1.7"
   }
 }
