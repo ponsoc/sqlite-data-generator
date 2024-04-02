@@ -55,3 +55,7 @@ main()
   .then(() => console.log("Database generated successfully!"))
   .catch((error) => console.error(error));
 ```
+
+## Debugging
+
+To enable debugging set the `DEBUG` environment variable to `sqllite-data-generator`
