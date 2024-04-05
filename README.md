@@ -19,7 +19,9 @@ To change the configuration edit the `config/tables.js` file. The configuration 
     - `REAL NOT NULL`
     - `TEXT UNIQUE NOT NULL`
     - `TEXT DEFAULT 'Hello' CHECK(columnName <> 'World')`
-    - `FOREIGN KEY(columnName) REFERENCES tableName(columnName)` Use this format to create a foreign key constraint. Omit the `name` property when using this format. Add `FOREIGN KEY` constraints to the end of the table definition. Note that the field itself still needs to be added to the table definition. Make sure to order the tables in the configuration so that the referenced table is created first.
+    - `FOREIGN KEY(columnName) REFERENCES tableName(columnName)`. Use this format to create a foreign key constraint. Omit the `name` property when using this format. Add `FOREIGN KEY` constraints to the end of the table definition. Note that the field itself still needs to be added to the table definition. Make sure to order the tables in the configuration so that the referenced table is created first.
+
+- `rows`: The number of rows to generate for the table or a function with the signature `(tableName, fields) -> db.eachRow("sourceTable", tableName, fields)` Where `db` is a instance of the `SQLLiteDataGenerator` class. This will generate rows based on the rows of the source table. The source table must be defined before the table that uses it.
 
 For an example configuration see the `config/tables.js` file.
 
@@ -59,3 +61,12 @@ main()
 ## Debugging
 
 To enable debugging set the `DEBUG` environment variable to `sqllite-data-generator`
+
+## Roadmap
+
+- Fix foreign key constraints issue
+- Extend the example configuration to include more complex examples
+
+## Known Issues
+
+- Foreign key constraints can be configured however they are not properly set up in the database.

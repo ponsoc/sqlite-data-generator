@@ -48,7 +48,6 @@ class SQLLiteDataGenerator {
     const createTableQuery = `CREATE TABLE IF NOT EXISTS ${table.name} (${table.fields
       .map((field) => (field.name ? field.name + " " + field.type : field.type))
       .join(", ")})`;
-    console.log(createTableQuery);
     return await this.executeQuery(createTableQuery);
   }
 
@@ -201,10 +200,9 @@ class SQLLiteDataGenerator {
    * @returns {Promise} - A promise that resolves when the data generation is complete.
    */
   async generate(tables) {
-    await this.executeQuery("PRAGMA foreign_keys = ON");
     for (const table of tables) {
       await this.createTable(table);
-      // await this.insertExampleData(table);
+      await this.insertExampleData(table);
     }
   }
 }
