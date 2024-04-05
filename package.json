@@ -1,7 +1,7 @@
 {
-  "name": "sqllite-data-generator",
+  "name": "sqlite-data-generator",
   "version": "1.0.0",
-  "description": "A CLI for generating SQLLite database files with example data",
+  "description": "A CLI for generating SQLite database files with example data",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",

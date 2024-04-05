@@ -1,6 +1,6 @@
-# sqllite-data-generator
+# sqlite-data-generator
 
-A CLI for generating SQLLite database files with example data
+A CLI for generating SQLite database files with example data
 
 ## Configuration
 
@@ -21,7 +21,7 @@ To change the configuration edit the `config/tables.js` file. The configuration 
     - `TEXT DEFAULT 'Hello' CHECK(columnName <> 'World')`
     - `FOREIGN KEY(columnName) REFERENCES tableName(columnName)`. Use this format to create a foreign key constraint. Omit the `name` property when using this format. Add `FOREIGN KEY` constraints to the end of the table definition. Note that the field itself still needs to be added to the table definition. Make sure to order the tables in the configuration so that the referenced table is created first.
 
-- `rows`: The number of rows to generate for the table or a function with the signature `(tableName, fields) -> db.eachRow("sourceTable", tableName, fields)` Where `db` is a instance of the `SQLLiteDataGenerator` class. This will generate rows based on the rows of the source table. The source table must be defined before the table that uses it.
+- `rows`: The number of rows to generate for the table or a function with the signature `(tableName, fields) -> db.eachRow("sourceTable", tableName, fields)` Where `db` is a instance of the `SQLiteDataGenerator` class. This will generate rows based on the rows of the source table. The source table must be defined before the table that uses it.
 
 For an example configuration see the `config/tables.js` file.
 
@@ -36,11 +36,11 @@ npm run start
 Or use it as an NPM package:
 
 ```cmd
-npm install sqllite-data-generator
+npm install sqlite-data-generator
 ```
 
 ```javascript
-const db = new SQLLiteDataGenerator("example.db");
+const db = new SQLiteDataGenerator("example.db");
 
 async function main() {
   try {
@@ -60,7 +60,7 @@ main()
 
 ## Debugging
 
-To enable debugging set the `DEBUG` environment variable to `sqllite-data-generator`
+To enable debugging set the `DEBUG` environment variable to `sqlite-data-generator`
 
 ## Roadmap
 

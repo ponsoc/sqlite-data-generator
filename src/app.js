@@ -1,8 +1,8 @@
 const { faker } = require("@faker-js/faker");
-const SQLLiteDataGenerator = require("./lib/SQLLiteDataGenerator");
+const SQLiteDataGenerator = require("./lib/SQLiteDataGenerator");
 
-// create a new instance of the SQLLiteLib class
-const db = new SQLLiteDataGenerator("example.db");
+// create a new instance of the SQLiteLib class
+const db = new SQLiteDataGenerator("example.db");
 // import the TableConfig and pass any dependencies
 const tables = require("./config/tables copy")({ faker, db });
 
@@ -21,4 +21,4 @@ main()
   .then(() => console.log("Database generated successfully!"))
   .catch((error) => console.error(error));
 
-module.exports = { SQLLiteDataGenerator };
+module.exports = { SQLiteDataGenerator };

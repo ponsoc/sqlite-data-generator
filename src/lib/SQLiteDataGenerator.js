@@ -1,11 +1,11 @@
-class SQLLiteDataGenerator {
+class SQLiteDataGenerator {
   /**
-   * Represents a SQLLiteLib object.
+   * Represents a SQLiteLib object.
    * @constructor
    * @param {string} database - The path to the SQLite database file.
    * @param {object} sqlite3 - The SQLite3 module.
    */
-  constructor(database, sqlite3 = require("sqlite3").verbose(), debug = require("debug")("sqllite-data-generator")) {
+  constructor(database, sqlite3 = require("sqlite3").verbose(), debug = require("debug")("sqlite-data-generator")) {
     this.sqlite3 = sqlite3;
     this.db = new sqlite3.Database(database);
     this.debug = debug;
@@ -194,7 +194,7 @@ class SQLLiteDataGenerator {
   }
 
   /**
-   * Generates SQLLite data for the given tables.
+   * Generates SQLite data for the given tables.
    *
    * @param {Array} tables - The tables to generate data for.
    * @returns {Promise} - A promise that resolves when the data generation is complete.
@@ -207,4 +207,4 @@ class SQLLiteDataGenerator {
   }
 }
 
-module.exports = SQLLiteDataGenerator;
+module.exports = SQLiteDataGenerator;
