@@ -4,7 +4,7 @@ const SQLiteDataGenerator = require("./lib/SQLiteDataGenerator");
 // create a new instance of the SQLiteLib class
 const db = new SQLiteDataGenerator("example.db");
 // import the TableConfig and pass any dependencies
-const tables = require("./config/tables copy")({ faker, db });
+const tables = require("./config/tables.js")({ faker, db });
 
 async function main() {
   try {
