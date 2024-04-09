@@ -7,6 +7,8 @@ A CLI for generating SQLite database files with example data
 To change the configuration edit the `config/tables.js` file. The configuration is an array of objects, each object represents a table in the database. The object has the following properties:
 
 - `name`: The name of the table
+- `vars`: An object with key-value pairs. The value can a value or a function with the signature `() -> value`. The function is evaluated before the table is generated. The variables can be accessed in a generator function using the `variables` parameter.
+- `rowVars`: An object with key-value pairs. The value can a value or a function with the signature `() -> value`. The function is evaluated for each row generated. The variables can be accessed through `variables.row` in a generator function using the `variables` parameter.
 - `fields`: An array of objects, each object represents a field in the table. The object has the following properties:
 
   - `name`: The name of the field. Omit for foreign key constraints.
@@ -21,7 +23,12 @@ To change the configuration edit the `config/tables.js` file. The configuration 
     - `TEXT DEFAULT 'Hello' CHECK(columnName <> 'World')`
     - `FOREIGN KEY(columnName) REFERENCES tableName(columnName)`. Use this format to create a foreign key constraint. Omit the `name` property when using this format. Add `FOREIGN KEY` constraints to the end of the table definition. Note that the field itself still needs to be added to the table definition. Make sure to order the tables in the configuration so that the referenced table is created first.
 
-- `rows`: The number of rows to generate for the table or a function with the signature `(tableName, fields) -> db.eachRow("sourceTable", tableName, fields)` Where `db` is a instance of the `SQLiteDataGenerator` class. This will generate rows based on the rows of the source table. The source table must be defined before the table that uses it.
+  - `generator`: A function with the signature `(variables, row) -> value`. The function is evaluated for each row generated. The variables contains the variables defined in the table configuration. The row contains the row data when generating rows based on the source table.
+
+- `rows`: The number of rows to generate for the table or an object with the following properties:
+
+  - `sourceTable`: The name of the source table to generate rows from. The source table must be defined before the table that uses it.
+  - `filter`: A string that can be used to filter the rows of the source table. The filter is a SQL WHERE clause without the WHERE keyword.
 
 For an example configuration see the `config/tables.js` file.
 
@@ -58,6 +65,20 @@ main()
   .catch((error) => console.error(error));
 ```
 
+## API
+
+`constructor(filename: string [, sqlite3: sqlite3 package instance, debug: debug instance])`: Creates a new instance of the SQLiteDataGenerator class. The filename is the name of the database file to generate.
+
+`async connect()`: Connects to the database.
+
+`async disconnect()`: Disconnects from the database.
+
+`async generate(tables: Array)`: Generates the database file based on the configuration. The tables parameter is an array of objects, each object represents a table in the database. The object has properties as described in the configuration section.
+
+`async getRandomRowFromTable(tableName: string [, filter: string = ""])`: Returns a random row from the table. The filter parameter is a string that can be used to filter the rows of the table. The filter is a SQL WHERE clause without the WHERE keyword.
+
+`async getRowFromTable(tableName: string [, filter: string = "", order: string = ""])`: Returns a row from the table. The filter parameter is a string that can be used to filter the rows of the table. The filter is a SQL WHERE clause without the WHERE keyword. The order parameter is a string that can be used to order the rows of the table. The order is a SQL ORDER BY clause without the ORDER BY keyword.
+
 ## Debugging
 
 To enable debugging set the `DEBUG` environment variable to `sqlite-data-generator`
@@ -66,6 +87,7 @@ To enable debugging set the `DEBUG` environment variable to `sqlite-data-generat
 
 - Fix foreign key constraints issue
 - Extend the example configuration to include more complex examples
+- Add the ability to generate multiple rows of data for a single row in the source table
 
 ## Known Issues
 

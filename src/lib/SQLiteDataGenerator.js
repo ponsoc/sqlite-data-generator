@@ -40,15 +40,69 @@ class SQLiteDataGenerator {
   }
 
   /**
+   * Generates SQLite data for the given tables.
+   *
+   * @param {Array} tables - The tables to generate data for.
+   * @returns {Promise} - A promise that resolves when the data generation is complete.
+   */
+  async generate(tables) {
+    for (const table of tables) {
+      await this.#createTable(table);
+      await this.#insertExampleData(table);
+    }
+  }
+
+  /**
+   * Retrieves a random row from a table in the SQLite database.
+   *
+   * @param {string} tableName - The name of the table.
+   * @param {string} [filter=""] - The filter to apply to the query (optional).
+   * @returns {Promise<Object|null>} - A promise that resolves with the random row object, or null if no row is found.
+   * @throws {Error} - If there is an error retrieving the random row.
+   */
+  async getRandomRowFromTable(tableName, filter = "") {
+    return await this.getRowFromTable(tableName, filter, "RANDOM()");
+  }
+
+  /**
+   * Retrieves a single row from a table in the SQLite database.
+   *
+   * @param {string} tableName - The name of the table.
+   * @param {string} [filter=""] - The filter condition to apply to the query.
+   * @param {string} [order=""] - The order in which to retrieve the rows.
+   * @returns {Promise<Object|null>} - A promise that resolves with the retrieved row object, or null if no row is found.
+   * @throws {Error} - If there is an error retrieving the row from the table.
+   */
+  async getRowFromTable(tableName, filter = "", order = "") {
+    return await new Promise(async (resolve, reject) => {
+      if (await this.#tableExists(tableName)) {
+        const query = `SELECT * FROM ${tableName} ${filter ? "WHERE " + filter : ""} ${order ? "ORDER BY " + order : ""}`;
+        this.debug(`Executing query: ${query}`);
+        this.db.get(query, (err, row) => {
+          if (err) {
+            reject(new Error(`Error getting row from table ${tableName}: ${err.message}`));
+          } else {
+            resolve(row || null);
+          }
+        });
+      } else {
+        resolve(null);
+      }
+    });
+  }
+
+  // private methods
+
+  /**
    * Creates a table in the SQLite database if it does not already exist.
    * @param {Object} table - The table object containing the name and fields of the table.
    * @returns {Promise} - A promise that resolves when the table is created.
    */
-  async createTable(table) {
+  async #createTable(table) {
     const createTableQuery = `CREATE TABLE IF NOT EXISTS ${table.name} (${table.fields
       .map((field) => (field.name ? field.name + " " + field.type : field.type))
       .join(", ")})`;
-    return await this.executeQuery(createTableQuery);
+    return await this.#executeQuery(createTableQuery);
   }
 
   /**
@@ -56,58 +110,15 @@ class SQLiteDataGenerator {
    * @param {object} table - The table object.
    * @returns {Promise<void>} - A promise that resolves when the example data is inserted.
    */
-  async insertExampleData(table) {
+  async #insertExampleData(table) {
+    const variables = await this.#resolveVariables(table.vars);
     const fieldsWithName = table.fields.filter((field) => field.name);
 
-    if (typeof table.rows === "function") {
-      await table.rows(table.name, fieldsWithName);
+    if (typeof table.rows === "object") {
+      await this.#eachRow(table.rows.sourceTable, table.name, fieldsWithName, variables, table.rows.filter);
     } else {
-      await this.forCount(table.name, fieldsWithName, table.rows);
+      await this.#forCount(table.name, fieldsWithName, variables, table.rowVars, table.rows);
     }
-  }
-
-  /**
-   * Maps fields to their corresponding values based on the provided rowData.
-   * @param {Array} fields - The array of fields to map.
-   * @param {Array} rowData - The optional array of row data.
-   * @returns {Promise<Array>} - A promise that resolves to an array of mapped values.
-   */
-  async mapFieldsToValues(fields, rowData = []) {
-    return await Promise.all(
-      fields.map(async (field) => {
-        if (typeof field.generator === "function") {
-          try {
-            return `"${await field.generator(rowData)}"`;
-          } catch (e) {
-            reject(new Error(`Error generating data for field ${field.name} in table ${table.name}: ${e?.message || e}`));
-          }
-        } else {
-          return "NULL";
-        }
-      })
-    );
-  }
-
-  /**
-   * Retrieves a random ID from the specified table.
-   *
-   * @param {string} tableName - The name of the table.
-   * @param {string} [filter=""] - The optional filter to apply to the query.
-   * @returns {Promise<number|null>} - A promise that resolves with the random ID or null if no ID is found.
-   * @throws {Error} - If there is an error retrieving the random ID.
-   */
-  getRandomIdFromTable(tableName, filter = "") {
-    return new Promise((resolve, reject) => {
-      const query = `SELECT id FROM ${tableName} ${filter ? "WHERE " + filter : ""} ORDER BY RANDOM() LIMIT 1`;
-      this.debug(`Executing query: ${query}`);
-      this.db.get(query, (err, row) => {
-        if (err) {
-          reject(new Error(`Error getting random ID from table ${tableName}: ${err.message}`));
-        } else {
-          resolve(row ? row.id : null);
-        }
-      });
-    });
   }
 
   /**
@@ -118,12 +129,13 @@ class SQLiteDataGenerator {
    * @param {number} count - The number of rows to generate and insert.
    * @returns {Promise<void>} - A promise that resolves when all rows have been inserted.
    */
-  async forCount(tableName, fields, count) {
+  async #forCount(tableName, fields, variables, rowVariables, count) {
     for (let i = 0; i < count; i++) {
+      variables.row = await this.#resolveVariables(rowVariables);
       let insertQuery = `INSERT INTO ${tableName} (${fields.map((field) => field.name).join(", ")}) VALUES `;
-      let rowValues = await this.mapFieldsToValues(fields);
+      let rowValues = await this.#mapFieldsToValues(tableName, fields, variables);
       insertQuery += `(${rowValues.join(", ")})`;
-      await this.executeQuery(insertQuery);
+      await this.#executeQuery(insertQuery);
     }
   }
 
@@ -135,8 +147,8 @@ class SQLiteDataGenerator {
    * @param {string} [filter=""] - An optional filter to apply to the query.
    * @returns {Promise} A promise that resolves when all rows have been processed and inserted.
    */
-  eachRow(ofTableName, newTableName, fields, filter = "") {
-    return new Promise((resolve, reject) => {
+  async #eachRow(ofTableName, newTableName, fields, variables = {}, filter = "") {
+    return await new Promise((resolve, reject) => {
       const query = `SELECT * FROM ${ofTableName} ${filter ? "WHERE " + filter : ""}`;
       this.debug(`Executing query: ${query}`);
 
@@ -150,9 +162,9 @@ class SQLiteDataGenerator {
             let insertQuery = `INSERT INTO ${newTableName} (${fields.map((field) => field.name).join(", ")}) VALUES `;
             const rowPromise = new Promise(async (resolve) => {
               this.debug(`Processing row: ${JSON.stringify(row)}`);
-              const rowValues = await this.mapFieldsToValues(fields, row);
+              const rowValues = await this.#mapFieldsToValues(newTableName, fields, variables, row);
               insertQuery += `(${rowValues.join(", ")})`;
-              await this.executeQuery(insertQuery);
+              await this.#executeQuery(insertQuery);
               resolve();
             });
             rowPromises.push(rowPromise);
@@ -176,11 +188,30 @@ class SQLiteDataGenerator {
   }
 
   /**
+   * Resolves variables by executing functions and storing the results.
+   * @private
+   * @param {Object} variables - The variables object.
+   * @returns {Object} - The object containing the results of executing the functions.
+   */
+  async #resolveVariables(variables = {}) {
+    const functionResults = {};
+    // Loop through all keys (function names) in the object
+    for (const key of Object.keys(variables)) {
+      // Check if the value associated with the key is a function
+      if (typeof variables[key] === "function") {
+        // Execute the function and store the result
+        functionResults[key] = await variables[key]();
+      }
+    }
+    return functionResults;
+  }
+
+  /**
    * Executes the given SQL query.
    * @param {string} query - The SQL query to execute.
    * @returns {Promise<void>} - A promise that resolves when the query is executed successfully, or rejects with an error if there was a problem executing the query.
    */
-  async executeQuery(query) {
+  async #executeQuery(query) {
     return new Promise((resolve, reject) => {
       this.debug(`Executing query: ${query}`);
       this.db.run(query, (err) => {
@@ -194,16 +225,39 @@ class SQLiteDataGenerator {
   }
 
   /**
-   * Generates SQLite data for the given tables.
-   *
-   * @param {Array} tables - The tables to generate data for.
-   * @returns {Promise} - A promise that resolves when the data generation is complete.
+   * Maps fields to their corresponding values based on the provided rowData.
+   * @param {Array} fields - The array of fields to map.
+   * @param {Array} rowData - The optional array of row data.
+   * @returns {Promise<Array>} - A promise that resolves to an array of mapped values.
    */
-  async generate(tables) {
-    for (const table of tables) {
-      await this.createTable(table);
-      await this.insertExampleData(table);
-    }
+  async #mapFieldsToValues(tableName, fields, variables, rowData = []) {
+    return await Promise.all(
+      fields.map(async (field) => {
+        if (typeof field.generator === "function") {
+          try {
+            return `"${await field.generator(variables, rowData)}"`;
+          } catch (e) {
+            throw new Error(`Error generating data for field ${field.name} in table ${tableName}: ${e?.message || e}`);
+          }
+        } else {
+          return "NULL";
+        }
+      })
+    );
+  }
+
+  async #tableExists(tableName) {
+    return new Promise((resolve, reject) => {
+      const query = `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
+      this.db.get(query, [tableName], (err, row) => {
+        if (err) {
+          reject(err);
+        } else {
+          // If row exists, table exists
+          resolve(!!row);
+        }
+      });
+    });
   }
 }
 

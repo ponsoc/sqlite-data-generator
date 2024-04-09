@@ -6,7 +6,7 @@ module.exports = function (dependencies) {
         { name: "id", type: "INTEGER PRIMARY KEY" },
         { name: "name", type: "TEXT", generator: () => dependencies.faker.name.findName() },
         { name: "email", type: "TEXT", generator: () => dependencies.faker.internet.email() },
-        { name: "age", type: "INTEGER", generator: () => dependencies.faker.datatype.number({ min: 18, max: 90 }) },
+        { name: "age", type: "INTEGER", generator: () => dependencies.faker.number.int({ min: 18, max: 90 }) },
       ],
       numRows: 10,
     },
