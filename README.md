@@ -87,10 +87,9 @@ To enable debugging set the `DEBUG` environment variable to `sqlite-data-generat
 
 ## Roadmap
 
-- Fix foreign key constraints issue
 - Extend the example configuration to include more complex examples
 - Add the ability to generate multiple rows of data for a single row in the source table
 
 ## Known Issues
 
-- Foreign key constraints can be configured however they are not properly set up in the database.
+- N/A

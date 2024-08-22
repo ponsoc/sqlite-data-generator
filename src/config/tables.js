@@ -4,11 +4,11 @@ module.exports = function (dependencies) {
       name: "users",
       fields: [
         { name: "id", type: "INTEGER PRIMARY KEY" },
-        { name: "name", type: "TEXT", generator: () => dependencies.faker.name.findName() },
+        { name: "name", type: "TEXT", generator: () => dependencies.faker.person.fullName() },
         { name: "email", type: "TEXT", generator: () => dependencies.faker.internet.email() },
         { name: "age", type: "INTEGER", generator: () => dependencies.faker.number.int({ min: 18, max: 90 }) },
       ],
-      numRows: 10,
+      rows: 10,
     },
     {
       name: "posts",
@@ -19,13 +19,16 @@ module.exports = function (dependencies) {
         {
           name: "author_id",
           type: "INTEGER",
-          generator: async () => await dependencies.db.getRandomIdFromTable("users"),
+          generator: async () => {
+            const row = await dependencies.db.getRandomRowFromTable("users")
+            return row.id;
+          }
         },
         {
           type: "FOREIGN KEY(author_id) REFERENCES users(id)",
         },
       ],
-      numRows: 20,
+      rows: 20,
     },
   ];
 };
