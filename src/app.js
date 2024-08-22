@@ -9,6 +9,7 @@ const tables = require("./config/tables.js")({ faker, db });
 async function main() {
   try {
     await db.connect();
+    await db.enableForeignKeySupport();
     await db.generate(tables);
   } catch (error) {
     throw error;
