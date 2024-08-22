@@ -23,12 +23,26 @@ class SQLiteDataGenerator {
     });
   }
 
+
+  async enableForeignKeySupport() {
+    return await new Promise((resolve, reject) => {
+      this.db.run('PRAGMA foreign_keys = ON', (err) => {
+        if (err) {
+          reject(new Error(`Error enabling foreign key support: ${err.message}`));
+        } else {
+          resolve();
+        }
+      });
+    })
+  }
+
+
   /**
    * Disconnects from the database.
    * @returns {Promise<void>} A promise that resolves when the disconnection is successful.
    */
   async disconnect() {
-    return await new Promise((resolve) => {
+    return await new Promise((resolve, reject) => {
       this.db.close((err) => {
         if (err) {
           reject(new Error(`Error closing the database connection: ${err.message}`));
@@ -46,6 +60,7 @@ class SQLiteDataGenerator {
    * @returns {Promise} - A promise that resolves when the data generation is complete.
    */
   async generate(tables) {
+    this.debug('Start generating...')
     for (const table of tables) {
       await this.#createTable(table);
       await this.#insertExampleData(table);
@@ -111,8 +126,13 @@ class SQLiteDataGenerator {
    * @returns {Promise<void>} - A promise that resolves when the example data is inserted.
    */
   async #insertExampleData(table) {
+    this.debug(`Generating data for table '${table.name}'`);
     const variables = await this.#resolveVariables(table.vars);
     const fieldsWithName = table.fields.filter((field) => field.name);
+
+    this.debug('table', table);
+    this.debug('variables', variables);
+    this.debug('fiedsWithName', fieldsWithName);
 
     if (typeof table.rows === "object") {
       await this.#eachRow(table.rows.sourceTable, table.name, fieldsWithName, variables, table.rows.filter);

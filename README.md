@@ -71,6 +71,8 @@ main()
 
 `async connect()`: Connects to the database.
 
+`async enableForeignKeySupport`: Enables foreign keys on the connection.
+
 `async disconnect()`: Disconnects from the database.
 
 `async generate(tables: Array)`: Generates the database file based on the configuration. The tables parameter is an array of objects, each object represents a table in the database. The object has properties as described in the configuration section.
