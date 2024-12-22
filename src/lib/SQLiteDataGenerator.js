@@ -5,9 +5,11 @@ class SQLiteDataGenerator {
    * @param {string} database - The path to the SQLite database file.
    * @param {object} sqlite3 - The SQLite3 module.
    */
-  constructor(database, sqlite3 = require("sqlite3").verbose(), debug = require("debug")("sqlite-data-generator")) {
+  constructor(fs = require("fs"), sqlite3 = require("sqlite3").verbose(), debug = require("debug")("sqlite-data-generator")) {
+    this.temp_db_name = "sqlite_data_generator.db"
+    this.fs = fs
     this.sqlite3 = sqlite3;
-    this.db = new sqlite3.Database(database);
+    this.db = new sqlite3.Database(this.temp_db_name);
     this.debug = debug;
   }
 
@@ -47,11 +49,21 @@ class SQLiteDataGenerator {
         if (err) {
           reject(new Error(`Error closing the database connection: ${err.message}`));
         } else {
+          this.fs.unlinkSync(this.temp_db_name)
           resolve();
         }
       });
     });
   }
+
+  /**
+   * Writes the temporary database to the final location
+   * @returns {void} 
+   */
+  async writeToFile(db_name) {
+    this.fs.copyFileSync(this.temp_db_name, db_name)
+  }
+
 
   /**
    * Generates SQLite data for the given tables.
@@ -101,7 +113,7 @@ class SQLiteDataGenerator {
           }
         });
       } else {
-        resolve(null);
+        reject(new Error(`Error getting row from table ${tableName}: Table doesn't exists.`));
       }
     });
   }
