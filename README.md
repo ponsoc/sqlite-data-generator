@@ -21,7 +21,7 @@ To change the configuration edit the `config/tables.js` file. The configuration 
     - `REAL NOT NULL`
     - `TEXT UNIQUE NOT NULL`
     - `TEXT DEFAULT 'Hello' CHECK(columnName <> 'World')`
-    - `FOREIGN KEY(columnName) REFERENCES tableName(columnName)`. Use this format to create a foreign key constraint. Omit the `name` property when using this format. Add `FOREIGN KEY` constraints to the end of the table definition. Note that the field itself still needs to be added to the table definition. Make sure to order the tables in the configuration so that the referenced table is created first.
+    - `FOREIGN KEY(columnName) REFERENCES tableName(columnName)`. Use this format to create a foreign key constraint. Omit the `name` property when using this format. Add `FOREIGN KEY` constraints to the end of the table definition. Note that the field itself (where the foreign key refers to) still needs to be added to the table definition. Make sure to order the tables in the configuration so that the referenced table is created first.
 
   - `generator`: A function with the signature `(variables, row) -> value`. The function is evaluated for each row generated. The variables contains the variables defined in the table configuration. The row contains the row data when generating rows based on the source table.
 
@@ -87,7 +87,6 @@ To enable debugging set the `DEBUG` environment variable to `sqlite-data-generat
 
 ## Roadmap
 
-- Extend the example configuration to include more complex examples
 - Add the ability to generate multiple rows of data for a single row in the source table
 
 ## Known Issues

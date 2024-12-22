@@ -1,8 +1,9 @@
 const { faker } = require("@faker-js/faker");
 const SQLiteDataGenerator = require("./lib/SQLiteDataGenerator");
 
+const db_name = "example.db"
 // create a new instance of the SQLiteLib class
-const db = new SQLiteDataGenerator("example.db");
+const db = new SQLiteDataGenerator();
 // import the TableConfig and pass any dependencies
 const tables = require("./config/tables.js")({ faker, db });
 
@@ -11,6 +12,7 @@ async function main() {
     await db.connect();
     await db.enableForeignKeySupport();
     await db.generate(tables);
+    await db.writeToFile(db_name);
   } catch (error) {
     throw error;
   } finally {
