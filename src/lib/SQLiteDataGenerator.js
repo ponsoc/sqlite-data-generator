@@ -1,3 +1,5 @@
+const { resolve } = require("path");
+
 class SQLiteDataGenerator {
   /**
    * Represents a SQLiteLib object.
@@ -5,8 +7,9 @@ class SQLiteDataGenerator {
    * @param {string} database - The path to the SQLite database file.
    * @param {object} sqlite3 - The SQLite3 module.
    */
-  constructor(fs = require("fs"), sqlite3 = require("sqlite3").verbose(), csvStringify = require("csv-stringify"), debug = require("debug")("sqlite-data-generator")) {
+  constructor(path = require("path"), fs = require("fs"), sqlite3 = require("sqlite3").verbose(), csvStringify = require("csv-stringify").stringify, debug = require("debug")("sqlite-data-generator")) {
     this.temp_db_name = "sqlite_data_generator.db"
+    this.path = path
     this.fs = fs
     this.sqlite3 = sqlite3;
     this.csvStringify = csvStringify
@@ -64,40 +67,56 @@ class SQLiteDataGenerator {
     this.fs.copyFileSync(this.temp_db_name, db_name)
   }
 
-  async exportToCSV(folderPath){
-    this.db.each(
-      "select name from sqlite_master where type='table'",
-      (err, row) => {
-        if (err) {
-          reject(new Error(`Error retrieving tables from database: ${err.message}`));
-        } else {
-          let insertQuery = `INSERT INTO ${newTableName} (${fields.map((field) => field.name).join(", ")}) VALUES `;
-          const rowPromise = new Promise(async (resolve) => {
-            this.debug(`Processing row: ${JSON.stringify(row)}`);
-            const rowValues = await this.#mapFieldsToValues(newTableName, fields, variables, row);
-            insertQuery += `(${rowValues.join(", ")})`;
-            await this.#executeQuery(insertQuery);
-            resolve();
-          });
-          rowPromises.push(rowPromise);
+  async exportToCSV(exportPath) {
+    return await new Promise(async (resolve, reject) => {
+      this.db.each(
+        "select name from sqlite_master where type='table'",
+         async (err, row) => {
+          if (err) {
+            reject(new Error(`Error retrieving tables from database: ${err.message}`));
+          } else {
+            await this.processTable(row.name, exportPath)
+          }
+        },
+        (err) => {
+          if (err) {
+            reject(new Error(`Error exporting to CSV rows from table ${tableName}: ${err.message}`));
+          } else {
+            resolve()
+          }
         }
-      },
-      (err) => {
-        if (err) {
-          reject(new Error(`Error retrieving rows from table ${tableName}: ${err.message}`));
-        } else {
-          Promise.all(rowPromises)
-            .then(() => {
-              resolve();
-            })
-            .catch((error) => {
-              reject(new Error(`Error resolving rows: ${error.message}`));
-            });
-        }
-      }
-    );
+      );
+    });
   }
 
+  // export table with mongo options enabled / studio3t -> embedding based on contrains, same for arrays, configure upfront
+  // suggest mysql workbench for importing csv's
+  async processTable(tableName, exportPath) {
+    const fileStream = this.fs.createWriteStream(this.path.join(exportPath, `${tableName}_table.csv`));
+    const firstRow = this.getRowFromTable(tableName);
+    const headers = Object.keys(firstRow);
+    const csvStream = this.csvStringify({ header: true, columns: headers });
+    csvStream.pipe(fileStream)
+    return await new Promise(async (resolve, reject) => {
+      this.db.each(`select * from ${tableName}`, (err, row) => {
+        if (err) {
+          reject(new Error(`Error retrieving rows from table while writing CSV: ${err.message}`));
+        }
+        else {
+          csvStream.write(row)
+        }
+      }, (err) => {
+        csvStream.end()
+        if (err) {
+          reject(new Error(`Error while exporting table to CSV: ${err.message}`));
+        }else{
+          resolve()
+        }
+      })
+    })
+
+
+  }
 
   /**
    * Generates SQLite data for the given tables.
@@ -238,7 +257,7 @@ class SQLiteDataGenerator {
         },
         (err) => {
           if (err) {
-            reject(new Error(`Error retrieving rows from table ${tableName}: ${err.message}`));
+            reject(new Error(`Error while iterating table ${tableName}: ${err.message}`));
           } else {
             Promise.all(rowPromises)
               .then(() => {
