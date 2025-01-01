@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Roel van Egmond",
+  "author": "Ponsoc",
   "license": "MIT",
   "dependencies": {
     "@faker-js/faker": "^8.4.1",
