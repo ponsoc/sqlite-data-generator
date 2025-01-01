@@ -5,10 +5,11 @@ class SQLiteDataGenerator {
    * @param {string} database - The path to the SQLite database file.
    * @param {object} sqlite3 - The SQLite3 module.
    */
-  constructor(fs = require("fs"), sqlite3 = require("sqlite3").verbose(), debug = require("debug")("sqlite-data-generator")) {
+  constructor(fs = require("fs"), sqlite3 = require("sqlite3").verbose(), csvStringify = require("csv-stringify"), debug = require("debug")("sqlite-data-generator")) {
     this.temp_db_name = "sqlite_data_generator.db"
     this.fs = fs
     this.sqlite3 = sqlite3;
+    this.csvStringify = csvStringify
     this.db = new sqlite3.Database(this.temp_db_name);
     this.debug = debug;
   }
@@ -38,7 +39,6 @@ class SQLiteDataGenerator {
     })
   }
 
-
   /**
    * Disconnects from the database.
    * @returns {Promise<void>} A promise that resolves when the disconnection is successful.
@@ -62,6 +62,40 @@ class SQLiteDataGenerator {
    */
   async writeToFile(db_name) {
     this.fs.copyFileSync(this.temp_db_name, db_name)
+  }
+
+  async exportToCSV(folderPath){
+    this.db.each(
+      "select name from sqlite_master where type='table'",
+      (err, row) => {
+        if (err) {
+          reject(new Error(`Error retrieving tables from database: ${err.message}`));
+        } else {
+          let insertQuery = `INSERT INTO ${newTableName} (${fields.map((field) => field.name).join(", ")}) VALUES `;
+          const rowPromise = new Promise(async (resolve) => {
+            this.debug(`Processing row: ${JSON.stringify(row)}`);
+            const rowValues = await this.#mapFieldsToValues(newTableName, fields, variables, row);
+            insertQuery += `(${rowValues.join(", ")})`;
+            await this.#executeQuery(insertQuery);
+            resolve();
+          });
+          rowPromises.push(rowPromise);
+        }
+      },
+      (err) => {
+        if (err) {
+          reject(new Error(`Error retrieving rows from table ${tableName}: ${err.message}`));
+        } else {
+          Promise.all(rowPromises)
+            .then(() => {
+              resolve();
+            })
+            .catch((error) => {
+              reject(new Error(`Error resolving rows: ${error.message}`));
+            });
+        }
+      }
+    );
   }
 
 
